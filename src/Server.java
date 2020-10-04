@@ -68,9 +68,7 @@ public class Server extends Thread{
 
         private void heartbeat(String LFD) throws IOException {
             printTimestamp();
-            System.out.printf("S1 receives heartbeat from %s %n", LFD);
-            printTimestamp();
-            System.out.printf("S1 sending heartbeat to %s %n", LFD);
+            System.out.printf("Acknowledge heartbeat from %s %n", LFD);
             String reply = "heartbeat\n";
             out.write(reply.getBytes());
         }
