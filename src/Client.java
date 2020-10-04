@@ -89,13 +89,20 @@ public class Client {
     }
 
     private void receiveReply(BufferedReader in1, BufferedReader in2, BufferedReader in3) throws IOException {
+        // Duplicate detection
+        boolean flag = true;
         // Get the reply from the 1st Server
         printTimestamp();
         try {
             String[] msgArr1 = in1.readLine().split(" ", 2);
             Integer requestNum1 = Integer.valueOf(msgArr1[0]);
             String msg1 = msgArr1[1];
-            System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+            if (flag) {
+                System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+                flag = false;
+            } else {
+                System.out.printf("[DUPLICATED] Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+            }
         } catch (Exception e) {
             System.out.println("Looks like S1 is dead");
         }
@@ -106,7 +113,12 @@ public class Client {
             String[] msgArr2 = in2.readLine().split(" ", 2);
             Integer requestNum2 = Integer.valueOf(msgArr2[0]);
             String msg2 = msgArr2[1];
-            System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
+            if (flag) {
+                System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
+                flag = false;
+            } else {
+                System.out.printf("[DUPLICATED] Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
+            }
         } catch (Exception e) {
             System.out.println("Looks like S2 is dead");
         }
@@ -117,7 +129,12 @@ public class Client {
             String[] msgArr3 = in3.readLine().split(" ", 2);
             Integer requestNum3 = Integer.valueOf(msgArr3[0]);
             String msg3 = msgArr3[1];
-            System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
+            if (flag) {
+                System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
+                flag = false;
+            } else {
+                System.out.printf("[DUPLICATED] Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
+            }
         } catch (Exception e) {
             System.out.println("Looks like S3 is dead");
         }
