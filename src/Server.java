@@ -53,17 +53,18 @@ public class Server extends Thread {
             while ((line = in.readLine()) != null) {
                 // all client messages are in format "clientname message"
                 // retrieve the client name by splitting the line
-                String[] tokens = line.split(" ", 2);
+                String[] tokens = line.split(" ", 3);
                 if (tokens != null && tokens.length > 0) {
                     String client = tokens[0];
-                    String msg = tokens[1];
+                    Integer requestNum = Integer.valueOf(tokens[1]);
+                    String msg = tokens[2];
 
                     if (client.contains("LFD")) {
                         heartbeat(client);
                     } else {
-                        receiveRequest(client, msg);
+                        receiveRequest(client, requestNum, msg);
                         printState();
-                        sendReply(client, msg);
+                        sendReply(client, requestNum, msg);
                     }
                 }
             }
@@ -82,14 +83,15 @@ public class Server extends Thread {
             System.out.println("my_state_" + name + " = " + (++state));
         }
 
-        private void receiveRequest(String client, String msg) {
+        private void receiveRequest(String client, Integer requestNum, String msg) {
             printTimestamp();
-            System.out.printf("Receiving <%s, %s, request> %s %n", client, name, msg);
+            System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
         }
 
-        private void sendReply(String client, String msg) throws IOException {
+        private void sendReply(String client, Integer requestNum, String msg) throws IOException {
             printTimestamp();
-            System.out.printf("Sending <%s, %s, reply> %s %n", client, name, msg);
+            System.out.printf("Sending <%s, %s, request_num: %s, reply> %s %n", client, name, requestNum, msg);
+            msg = requestNum + " " + msg;
             msg += "\n";
             out.write(msg.getBytes());
         }

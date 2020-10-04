@@ -71,30 +71,42 @@ public class Client {
     }
 
     private void sendRequest(String line, PrintWriter out1, PrintWriter out2, PrintWriter out3) {
+        String[] msgArr = line.split(" ", 2);
+        Integer requestNum = Integer.valueOf(msgArr[0]);
+        String msg = msgArr[1];
         // Send message to the 1st Server
         out1.println(this.name + " " + line);
         printTimestamp();
-        System.out.printf("Sent <%s, S1, request> %s %n", this.name, line);
+        System.out.printf("Sent <%s, S1, request_num = %s, request> %s %n", this.name, requestNum, msg);
         // Send message to the 2nd Server
         out2.println(this.name + " " + line);
         printTimestamp();
-        System.out.printf("Sent <%s, S2, request> %s %n", this.name, line);
+        System.out.printf("Sent <%s, S2, request_num = %s, request> %s %n", this.name, requestNum, msg);
         // Send message to the 3rd Server
         out3.println(this.name + " " + line);
         printTimestamp();
-        System.out.printf("Sent <%s, S3, request> %s %n", this.name, line);
+        System.out.printf("Sent <%s, S3, request_num = %s, request> %s %n", this.name, requestNum, msg);
     }
 
     private void receiveReply(BufferedReader in1, BufferedReader in2, BufferedReader in3) throws IOException {
         // Get the reply from the 1st Server
         printTimestamp();
-        System.out.printf("Received <%s, S1, reply> %s %n", this.name, in1.readLine());
+        String[] msgArr1 = in1.readLine().split(" ", 2);
+        Integer requestNum1 = Integer.valueOf(msgArr1[0]);
+        String msg1 = msgArr1[1];
+        System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
         // Get the reply from the 1st Server
         printTimestamp();
-        System.out.printf("Received <%s, S2, reply> %s %n", this.name, in2.readLine());
+        String[] msgArr2 = in2.readLine().split(" ", 2);
+        Integer requestNum2 = Integer.valueOf(msgArr2[0]);
+        String msg2 = msgArr2[1];
+        System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
         // Get the reply from the 1st Server
         printTimestamp();
-        System.out.printf("Received <%s, S3, reply> %s %n", this.name, in3.readLine());
+        String[] msgArr3 = in3.readLine().split(" ", 2);
+        Integer requestNum3 = Integer.valueOf(msgArr3[0]);
+        String msg3 = msgArr3[1];
+        System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
     }
 
     private void printTimestamp() {
