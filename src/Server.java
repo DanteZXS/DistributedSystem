@@ -63,7 +63,7 @@ public class Server extends Thread {
                         heartbeat(client);
                     } else {
                         receiveRequest(client, requestNum, msg);
-                        printState();
+                        printState(msg);
                         sendReply(client, requestNum, msg);
                     }
                 }
@@ -78,9 +78,27 @@ public class Server extends Thread {
             out.write(reply.getBytes());
         }
 
-        private void printState() {
+        private void printState(String msg) {
+            String[] msgArr = msg.split(" ", 2);
             printTimestamp();
-            System.out.println("my_state_" + name + " = " + (++state));
+            synchronized (this) {
+                if (msgArr.length == 2 && msgArr[1].contains("=")) {
+                    // SET STATE=1
+                    String[] equation = msgArr[1].split("=");
+                    if ("STATE".equals(equation[0])) {
+                        try {
+                            state = Integer.parseInt(equation[1]);
+                        } catch (Exception e) {
+                            System.out.println("my_state_" + name + " = " + (++state));
+                        }
+                        System.out.println("my_state_" + name + " = " + state);
+                    } else {
+                        System.out.println("my_state_" + name + " = " + (++state));
+                    }
+                } else {
+                    System.out.println("my_state_" + name + " = " + (++state));
+                }
+            }
         }
 
         private void receiveRequest(String client, Integer requestNum, String msg) {

@@ -107,7 +107,7 @@ public class Client {
             System.out.println("Looks like S1 is dead");
         }
 
-        // Get the reply from the 1st Server
+        // Get the reply from the 2nd Server
         printTimestamp();
         try {
             String[] msgArr2 = in2.readLine().split(" ", 2);
@@ -123,7 +123,7 @@ public class Client {
             System.out.println("Looks like S2 is dead");
         }
 
-        // Get the reply from the 1st Server
+        // Get the reply from the 3rd Server
         printTimestamp();
         try {
             String[] msgArr3 = in3.readLine().split(" ", 2);
