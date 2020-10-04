@@ -4,13 +4,17 @@ import java.net.ServerSocket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Server extends Thread{
-    private final static int serverPort = 8818;
+public class Server extends Thread {
+    private static int serverPort;
+    private static String name;
     public static int state;
 
     public static void main(String[] args) {
         try {
+            serverPort = Integer.parseInt(args[0]);
+            name = args[1];
             ServerSocket serverSocket = new ServerSocket(serverPort);
+            System.out.println("Current port is " + serverPort + ", name is " + name);
             while (true) {
                 // waits for client to connect
                 Socket clientSocket = serverSocket.accept();
@@ -75,16 +79,17 @@ public class Server extends Thread{
 
         private void printState() {
             printTimestamp();
-            System.out.println("my_state_S1 = " + (++state));
+            System.out.println("my_state_" + name + " = " + (++state));
         }
 
         private void receiveRequest(String client, String msg) {
             printTimestamp();
-            System.out.printf("Receiving <%s, S1, request> %s %n", client, msg);
+            System.out.printf("Receiving <%s, %s, request> %s %n", client, name, msg);
         }
+
         private void sendReply(String client, String msg) throws IOException {
             printTimestamp();
-            System.out.printf("Sending <%s, S1, reply> %s %n", client, msg);
+            System.out.printf("Sending <%s, %s, reply> %s %n", client, name, msg);
             msg += "\n";
             out.write(msg.getBytes());
         }
