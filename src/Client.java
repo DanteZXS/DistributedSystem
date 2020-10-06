@@ -22,6 +22,7 @@ public class Client {
         Client client = new Client("localhost", 8818, args[0]);
         client.connect();
         client.chat();
+        client.socket.close();
     }
 
     private void connect() {
