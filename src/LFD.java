@@ -1,11 +1,14 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import javax.xml.catalog.Catalog;
 
 /**
  * A local fault detector runs on the same machines as the
@@ -40,8 +43,46 @@ public class LFD implements Runnable {
         }
 
         public static void main(String[] args) throws IOException {
+
+            if (args.length != 4) {
+                System.out.println("Wrong Input!!! Sample Input: java Server [port to server] [frequency to heartbeat server] [LFD id] [port to accept GFD heartbeat]");
+                return;
+            }
+
+
             // user-defined port number and heartbeat frequency
             LFD fd = new LFD("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
+
+            // port of lfd that can be used by GFD, this server socket is used for accepting heatbead from GFD
+            new Thread(() -> {
+
+                try(ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[3]))) {
+                    // waits for client to connect
+                    while(true) {
+                        Socket clientSocket = serverSocket.accept();
+                        System.out.println("Accepting GFD heatbeat connection...");
+                        new Thread(() -> {
+                            try (BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                                OutputStream clientOutput = clientSocket.getOutputStream();) {
+                                
+                                String line;
+                                while ((line = clientInput.readLine()) != null) {
+                                    String msg = args[3] + "\n";
+                                    clientOutput.write(msg.getBytes());
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }).start();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+
+
             // notify GFD
             gfdSocket = new Socket("localhost", 8888);
             gfdOut = new PrintWriter(gfdSocket.getOutputStream(), true);
@@ -76,7 +117,7 @@ public class LFD implements Runnable {
                     printTimestamp();
                     System.out.printf("[%s] %s sending heartbeat to %s %n", heartbeat_count, LFD_ID, SERVER_ID);
 
-                    out.printf("%s Heartbeating %n", LFD_ID);
+                    out.printf("LFD %s Heartbeating %n", LFD_ID);
 
                     String line = in.readLine();
                     if (line == null) break;
@@ -96,6 +137,7 @@ public class LFD implements Runnable {
             String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
             System.out.printf("[ %s ] ", timeStamp);
         }
+
 
 
 }

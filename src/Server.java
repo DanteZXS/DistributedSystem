@@ -5,12 +5,23 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Server extends Thread{
-    private final static int serverPort = 8818;
+    private static int serverPort = 8818;
     public static int state;
 
     public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Wrong Input!!! Sample Input: java Server [port]");
+            return;
+        }
+
         try {
-            ServerSocket serverSocket = new ServerSocket(serverPort);
+            serverPort = Integer.parseInt(args[0]);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        try(ServerSocket serverSocket = new ServerSocket(serverPort);) {
             while (true) {
                 // waits for client to connect
                 Socket clientSocket = serverSocket.accept();
@@ -69,8 +80,8 @@ public class Server extends Thread{
         private void heartbeat(String LFD) throws IOException {
             printTimestamp();
             System.out.printf("S1 receives heartbeat from %s %n", LFD);
-            printTimestamp();
-            System.out.printf("S1 sending heartbeat to %s %n", LFD);
+            // printTimestamp();
+            // System.out.printf("S1 sending heartbeat to %s %n", LFD);
             String reply = "heartbeat\n";
             out.write(reply.getBytes());
         }

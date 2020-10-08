@@ -19,7 +19,19 @@ public class Client {
     }
 
     public static void main(String[] args) throws IOException {
-        Client client = new Client("localhost", 8818, args[0]);
+        if (args.length != 2) {
+            System.out.println("Wrong Input!!! Sample Input: java Client [name] [port] ");
+            return;
+        }
+        int portVal = 8818;
+        try {
+            portVal = Integer.parseInt(args[1]);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        Client client = new Client("localhost", portVal, args[0]);
         client.connect();
         client.chat();
         client.socket.close();
