@@ -33,6 +33,7 @@ public class LFD implements Runnable {
         private static String LFD_ID;
         private static String SERVER_ID;
 
+
         public LFD (String hostname, int port, int freq, String id) {
             this.hostname = hostname;
             this.port = port;

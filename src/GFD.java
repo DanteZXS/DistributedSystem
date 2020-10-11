@@ -22,6 +22,7 @@ public class GFD {
     private static int port3;
     private static int frequency;
 
+
     public static void main(String[] args) {
         if (args.length != 4) {
             System.out.println("Wrong input!!! Sample input: java GFD [port1] [port2] [port3] frequency");
