@@ -4,13 +4,17 @@ import java.net.ServerSocket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Server extends Thread{
-    private final static int serverPort = 8818;
+public class Server extends Thread {
+    private static int serverPort;
+    private static String name;
     public static int state;
 
     public static void main(String[] args) {
         try {
+            serverPort = Integer.parseInt(args[0]);
+            name = args[1];
             ServerSocket serverSocket = new ServerSocket(serverPort);
+            System.out.println("Current port is " + serverPort + ", name is " + name);
             while (true) {
                 // waits for client to connect
                 Socket clientSocket = serverSocket.accept();
@@ -49,17 +53,18 @@ public class Server extends Thread{
             while ((line = in.readLine()) != null) {
                 // all client messages are in format "clientname message"
                 // retrieve the client name by splitting the line
-                String[] tokens = line.split(" ", 2);
+                String[] tokens = line.split(" ", 3);
                 if (tokens != null && tokens.length > 0) {
                     String client = tokens[0];
-                    String msg = tokens[1];
+                    Integer requestNum = Integer.valueOf(tokens[1]);
+                    String msg = tokens[2];
 
                     if (client.contains("LFD")) {
                         heartbeat(client);
                     } else {
-                        receiveRequest(client, msg);
-                        printState();
-                        sendReply(client, msg);
+                        receiveRequest(client, requestNum, msg);
+                        printState(msg);
+                        sendReply(client, requestNum, msg);
                     }
                 }
             }
@@ -68,25 +73,43 @@ public class Server extends Thread{
 
         private void heartbeat(String LFD) throws IOException {
             printTimestamp();
-            System.out.printf("S1 receives heartbeat from %s %n", LFD);
-            printTimestamp();
-            System.out.printf("S1 sending heartbeat to %s %n", LFD);
+            System.out.printf("Acknowledge heartbeat from %s %n", LFD);
             String reply = "heartbeat\n";
             out.write(reply.getBytes());
         }
 
-        private void printState() {
+        private void printState(String msg) {
+            String[] msgArr = msg.split(" ", 2);
             printTimestamp();
-            System.out.println("my_state_S1 = " + (++state));
+            synchronized (this) {
+                if (msgArr.length == 2 && msgArr[1].contains("=")) {
+                    // SET STATE=1
+                    String[] equation = msgArr[1].split("=");
+                    if ("STATE".equals(equation[0])) {
+                        try {
+                            state = Integer.parseInt(equation[1]);
+                        } catch (Exception e) {
+                            System.out.println("my_state_" + name + " = " + (++state));
+                        }
+                        System.out.println("my_state_" + name + " = " + state);
+                    } else {
+                        System.out.println("my_state_" + name + " = " + (++state));
+                    }
+                } else {
+                    System.out.println("my_state_" + name + " = " + (++state));
+                }
+            }
         }
 
-        private void receiveRequest(String client, String msg) {
+        private void receiveRequest(String client, Integer requestNum, String msg) {
             printTimestamp();
-            System.out.printf("Receiving <%s, S1, request> %s %n", client, msg);
+            System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
         }
-        private void sendReply(String client, String msg) throws IOException {
+
+        private void sendReply(String client, Integer requestNum, String msg) throws IOException {
             printTimestamp();
-            System.out.printf("Sending <%s, S1, reply> %s %n", client, msg);
+            System.out.printf("Sending <%s, %s, request_num: %s, reply> %s %n", client, name, requestNum, msg);
+            msg = requestNum + " " + msg;
             msg += "\n";
             out.write(msg.getBytes());
         }
