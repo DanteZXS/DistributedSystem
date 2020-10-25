@@ -7,10 +7,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.util.Date;
+import java.util.*;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.Set;
 
 
 public class GFD {
@@ -33,8 +31,6 @@ public class GFD {
         port2 = Integer.parseInt(args[1]);
         port3 = Integer.parseInt(args[2]);
         frequency = Integer.parseInt(args[3]);
-
-
 
 
         try(ServerSocket serverSocket = new ServerSocket(port);) {
