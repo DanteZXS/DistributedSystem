@@ -11,8 +11,11 @@ public class Server extends Thread {
     private static String name;
     private static int state;
     private static boolean isMaster;
+    private static int configNum;
 
-    /** The following section is for passive replication */
+    /**
+     * The following section is for passive replication
+     */
     private static int checkpoint_freq;
     private static int backup_id;
     private static int checkpoint_count = 1;
@@ -21,17 +24,16 @@ public class Server extends Thread {
     private static Set<Integer> alive_backups = new HashSet<>();
 
 
-
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
             System.out.println("If launching the primary server:");
-            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq>");
+            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> 1");
             System.out.println("If launching the backup server:");
-            System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)>");
+            System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)> 2");
             return;
         }
-        if (args.length != 4) {
+        if (args.length != 5) {
             System.out.println("Wrong Input!!!");
             return;
         }
@@ -41,18 +43,19 @@ public class Server extends Thread {
             isMaster = "True".equals(args[2]);
             if (isMaster) checkpoint_freq = Integer.parseInt(args[3]);
             else backup_id = Integer.parseInt(args[3]);
+            configNum = Integer.parseInt(args[4]);
             ServerSocket serverSocket = new ServerSocket(serverPort);
             System.out.println("Current port is " + serverPort + ", name is " + name);
             System.out.println("The current server is Master ? " + isMaster);
 
             // primary server checkpoints the backups
-            if (isMaster ) {
+            if (isMaster) {
                 sendCheckpoints(1, checkpoint_freq);
                 sendCheckpoints(2, checkpoint_freq);
             }
             // backups receive checkpoints from primary server
             else {
-                receiveCheckpoints(backup_ports[backup_id-1]);
+                receiveCheckpoints(backup_ports[backup_id - 1]);
             }
 
             while (true) {
@@ -71,7 +74,7 @@ public class Server extends Thread {
         new Thread(() -> {
             while (true) {
                 String line;
-                try (Socket socket = new Socket("localhost", backup_ports[backup_id-1]);
+                try (Socket socket = new Socket("localhost", backup_ports[backup_id - 1]);
                      BufferedReader in1 = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      PrintWriter out1 = new PrintWriter(socket.getOutputStream(), true);
                 ) {
@@ -85,7 +88,7 @@ public class Server extends Thread {
                             System.out.printf("my_state=%d checkpoint_count=%d%n", state, checkpoint_count);
                             out1.printf("my_state=%d checkpoint_count=%d%n", state, checkpoint_count);
                             line = in1.readLine();
-                            if (line == null){
+                            if (line == null) {
                                 synchronized (Server.class) {
                                     System.out.printf("Backup %d is dead %n", backup_id);
                                     alive_backups.remove(backup_id);
@@ -109,7 +112,7 @@ public class Server extends Thread {
                     } catch (InterruptedException | IOException e) {
                         return;
                     }
-                } catch(IOException e) {
+                } catch (IOException e) {
                     continue;
                 }
             }
@@ -183,7 +186,7 @@ public class Server extends Thread {
                     } else {
                         receiveRequest(client, requestNum, msg);
                         // In passive replication, only master sends back the response and updates state
-                        if (isMaster) {
+                        if (isMaster || configNum == 1) {
                             printState(msg);
                             sendReply(client, requestNum, msg);
                         }

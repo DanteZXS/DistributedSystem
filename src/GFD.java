@@ -33,7 +33,7 @@ public class GFD {
         frequency = Integer.parseInt(args[3]);
 
 
-        try(ServerSocket serverSocket = new ServerSocket(port);) {
+        try (ServerSocket serverSocket = new ServerSocket(port);) {
 
             System.out.println("Launching GFD ...");
             printMembers();
@@ -64,12 +64,11 @@ public class GFD {
                         while (true) {
                             out.printf("LFD Heartbeating from GFD %n");
                             line = in.readLine();
-                            if (line == null){
+                            if (line == null) {
                                 System.out.printf("LFD at port: %d is dead %n", port);
                                 System.out.println("Waiting for this LFD to re-connect");
                                 break;
-                            }
-                            else {
+                            } else {
                                 printTimestamp();
                                 System.out.printf("[%s] GFD receives heartbeat from port %s %n", heartbeat_count, line);
                             }
@@ -79,16 +78,14 @@ public class GFD {
                     } catch (InterruptedException | IOException e) {
                         return;
                     }
-                } catch(IOException e) {
+                } catch (IOException e) {
                     continue;
                 }
             }
 
 
-
         }).start();
     }
-
 
 
     private static void printTimestamp() {
