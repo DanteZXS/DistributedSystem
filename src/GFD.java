@@ -7,10 +7,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.util.Date;
+import java.util.*;
 import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.Set;
 
 
 public class GFD {
@@ -35,10 +33,8 @@ public class GFD {
         frequency = Integer.parseInt(args[3]);
 
 
-
-
         try(ServerSocket serverSocket = new ServerSocket(port);) {
-            
+
             System.out.println("Launching GFD ...");
             printMembers();
             startHeartBeat(port1, frequency);
@@ -61,14 +57,14 @@ public class GFD {
             while (true) {
                 String line = null;
                 try (Socket socket = new Socket("localhost", port);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
                     try {
                         int heartbeat_count = 0;
                         while (true) {
                             out.printf("LFD Heartbeating from GFD %n");
                             line = in.readLine();
-                            if (line == null){ 
+                            if (line == null){
                                 System.out.printf("LFD at port: %d is dead %n", port);
                                 System.out.println("Waiting for this LFD to re-connect");
                                 break;
@@ -89,7 +85,7 @@ public class GFD {
             }
 
 
-            
+
         }).start();
     }
 
