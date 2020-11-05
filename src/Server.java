@@ -123,7 +123,6 @@ public class Server extends Thread {
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Ready to accept primary server checkpoint messages...");
-                    new Thread(() -> {
                         try (BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                              OutputStream clientOutput = clientSocket.getOutputStream();) {
                              String line;
@@ -140,7 +139,6 @@ public class Server extends Thread {
                             e.printStackTrace();
                         }
 
-                    }).start();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
