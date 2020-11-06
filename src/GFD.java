@@ -19,6 +19,7 @@ public class GFD {
     private static int port2;
     private static int port3;
     private static int frequency;
+    private static final int RM_PORT = 2019;
 
     public static void main(String[] args) {
         if (args.length != 4) {
@@ -88,6 +89,18 @@ public class GFD {
     }
 
 
+    private static void sendMessageToRm(String msg){
+        // System.out.println(msg);
+        try (Socket socket = new Socket("localhost", RM_PORT);
+        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+            out.println(msg);
+        } catch(IOException e) {
+            return;
+        }
+    }
+
+
 
     private static void printTimestamp() {
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
@@ -142,6 +155,8 @@ public class GFD {
                             membership.add(server);
                             member_count++;
                             printMembers();
+                            System.out.println("line: " + line);
+                            sendMessageToRm(line);
                         }
                     }
                 }
@@ -152,6 +167,8 @@ public class GFD {
                             membership.remove(server);
                             member_count--;
                             printMembers();
+                            System.out.println("line: " + line);
+                            sendMessageToRm(line);
                         }
                     }
                 }

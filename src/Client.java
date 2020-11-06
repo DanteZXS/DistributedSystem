@@ -37,7 +37,6 @@ public class Client {
         Client client = new Client("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), args[3]);
         client.connect();
         client.chat();
-        client.socket.close();
     }
 
     private void connect() {

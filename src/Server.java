@@ -39,7 +39,7 @@ public class Server extends Thread {
             serverPort = Integer.parseInt(args[0]);
             name = args[1];
             isMaster = "True".equals(args[2]);
-            if (isMaster) checkpoint_freq = Integer.parseInt(args[3]);
+            if (isMaster) checkpoint_freq = Integer.parseInt(args[3]) * 1000;
             else backup_id = Integer.parseInt(args[3]);
             ServerSocket serverSocket = new ServerSocket(serverPort);
             System.out.println("Current port is " + serverPort + ", name is " + name);
