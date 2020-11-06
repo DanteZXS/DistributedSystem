@@ -7,15 +7,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-<<<<<<< HEAD
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.Set;
-=======
 import java.util.*;
 import java.text.SimpleDateFormat;
->>>>>>> master
 
 
 public class GFD {
@@ -27,10 +20,6 @@ public class GFD {
     private static int port3;
     private static int frequency;
 
-<<<<<<< HEAD
-=======
-
->>>>>>> master
     public static void main(String[] args) {
         if (args.length != 4) {
             System.out.println("Wrong input!!! Sample input: java GFD [port1] [port2] [port3] frequency");
@@ -43,15 +32,8 @@ public class GFD {
         frequency = Integer.parseInt(args[3]);
 
 
-<<<<<<< HEAD
-
-
-        try(ServerSocket serverSocket = new ServerSocket(port);) {
-            
-=======
         try(ServerSocket serverSocket = new ServerSocket(port);) {
 
->>>>>>> master
             System.out.println("Launching GFD ...");
             printMembers();
             startHeartBeat(port1, frequency);
@@ -74,23 +56,14 @@ public class GFD {
             while (true) {
                 String line = null;
                 try (Socket socket = new Socket("localhost", port);
-<<<<<<< HEAD
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
-=======
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
->>>>>>> master
                     try {
                         int heartbeat_count = 0;
                         while (true) {
                             out.printf("LFD Heartbeating from GFD %n");
                             line = in.readLine();
-<<<<<<< HEAD
-                            if (line == null){ 
-=======
                             if (line == null){
->>>>>>> master
                                 System.out.printf("LFD at port: %d is dead %n", port);
                                 System.out.println("Waiting for this LFD to re-connect");
                                 break;
@@ -111,11 +84,6 @@ public class GFD {
             }
 
 
-<<<<<<< HEAD
-            
-=======
-
->>>>>>> master
         }).start();
     }
 
@@ -192,8 +160,4 @@ public class GFD {
     }
 
 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> master

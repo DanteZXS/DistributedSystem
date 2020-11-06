@@ -34,23 +34,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws IOException {
-<<<<<<< HEAD
-        if (args.length != 2) {
-            System.out.println("Wrong Input!!! Sample Input: java Client [name] [port] ");
-            return;
-        }
-        int portVal = 8818;
-        try {
-            portVal = Integer.parseInt(args[1]);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-        Client client = new Client("localhost", portVal, args[0]);
-=======
         Client client = new Client("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), args[3]);
->>>>>>> master
         client.connect();
         client.chat();
         client.socket.close();
