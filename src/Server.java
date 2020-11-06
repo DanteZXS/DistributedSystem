@@ -28,7 +28,7 @@ public class Server extends Thread {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
             System.out.println("If launching the primary server:");
-            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> 1");
+            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> 2");
             System.out.println("If launching the backup server:");
             System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)> 2");
             return;
