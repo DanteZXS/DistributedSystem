@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
+
 public class GFD {
     private final static int port = 8888;
     public static int member_count;
@@ -18,7 +19,7 @@ public class GFD {
     private static int port2;
     private static int port3;
     private static int frequency;
-
+    private static final int RM_PORT = 2019;
 
     public static void main(String[] args) {
         if (args.length != 4) {
@@ -33,7 +34,7 @@ public class GFD {
 
 
         try(ServerSocket serverSocket = new ServerSocket(port);) {
-            
+
             System.out.println("Launching GFD ...");
             printMembers();
             startHeartBeat(port1, frequency);
@@ -56,14 +57,14 @@ public class GFD {
             while (true) {
                 String line = null;
                 try (Socket socket = new Socket("localhost", port);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                     PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
                     try {
                         int heartbeat_count = 0;
                         while (true) {
                             out.printf("LFD Heartbeating from GFD %n");
                             line = in.readLine();
-                            if (line == null){ 
+                            if (line == null){
                                 System.out.printf("LFD at port: %d is dead %n", port);
                                 System.out.println("Waiting for this LFD to re-connect");
                                 break;
@@ -84,8 +85,19 @@ public class GFD {
             }
 
 
-            
         }).start();
+    }
+
+
+    private static void sendMessageToRm(String msg){
+        // System.out.println(msg);
+        try (Socket socket = new Socket("localhost", RM_PORT);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+            out.println(msg);
+        } catch(IOException e) {
+            return;
+        }
     }
 
 
@@ -143,6 +155,8 @@ public class GFD {
                             membership.add(server);
                             member_count++;
                             printMembers();
+                            System.out.println("line: " + line);
+                            sendMessageToRm(line);
                         }
                     }
                 }
@@ -153,6 +167,8 @@ public class GFD {
                             membership.remove(server);
                             member_count--;
                             printMembers();
+                            System.out.println("line: " + line);
+                            sendMessageToRm(line);
                         }
                     }
                 }
