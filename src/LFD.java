@@ -13,7 +13,6 @@ import java.util.Date;
  * java LFD <port_number> <heartbeat_freq> <LFD_ID>
  */
 public class LFD implements Runnable {
-
     private final String hostname;
     private final int port;
     private Socket socket;

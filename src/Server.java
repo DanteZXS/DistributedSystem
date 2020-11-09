@@ -12,7 +12,6 @@ public class Server extends Thread {
     private static int state;
     private static boolean isMaster;
     private static int configNum;
-
     /**
      * The following section is for passive replication
      */

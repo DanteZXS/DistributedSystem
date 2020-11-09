@@ -3,6 +3,7 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+
 public class Client {
     private final String hostname;
     private String name;
