@@ -228,6 +228,7 @@ public class Server extends Thread {
             System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
         }
 
+
         private void sendReply(String client, Integer requestNum, String msg) throws IOException {
             printTimestamp();
             System.out.printf("Sending <%s, %s, request_num: %s, reply> %s %n", client, name, requestNum, msg);

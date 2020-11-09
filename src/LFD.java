@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+
 /**
  * A local fault detector runs on the same machines as the
  * server to detect whether the server is dead or not.
@@ -133,4 +134,3 @@ public class LFD implements Runnable {
 
 
 }
-
