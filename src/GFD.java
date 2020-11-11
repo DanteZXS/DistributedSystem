@@ -92,8 +92,13 @@ public class GFD {
     private static void sendMessageToRm(String msg){
         // System.out.println(msg);
         try (Socket socket = new Socket("localhost", RM_PORT);
+<<<<<<< HEAD
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+=======
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+>>>>>>> valentine
             out.println(msg);
         } catch(IOException e) {
             return;
@@ -177,4 +182,8 @@ public class GFD {
     }
 
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> valentine

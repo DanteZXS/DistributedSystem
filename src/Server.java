@@ -11,54 +11,90 @@ public class Server extends Thread {
     private static String name;
     private static int state;
     private static boolean isMaster;
+    private static int configNum;
 
-    /** The following section is for passive replication */
+    /**
+     * The following section is for passive replication
+     */
     private static int checkpoint_freq;
     private static int backup_id;
     private static int checkpoint_count = 1;
     private static int prev_count = 1;
-    private final static int[] backup_ports = {600, 601};
+    private final static int[] backup_ports = {700, 701};
     private static Set<Integer> alive_backups = new HashSet<>();
 
+    private static boolean i_am_ready;
+    private static int serverId;
+    private static int high_watermark;
 
+<<<<<<< HEAD
+=======
+    /** Each active server will open up two TCP connections as a client socket to the other
+     * two active servers; when a server dead and recovers, it opens up the a server socket to receive
+     * checkpoints from the other alive servers; after it is updated to the correct states, it re-opens two
+     * client sockets.*/
+    private final static int[] recovery_ports = {601, 602, 603};
+
+>>>>>>> valentine
 
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
             System.out.println("If launching the primary server:");
-            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq>");
+            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> 2 <# of the same server kind>");
             System.out.println("If launching the backup server:");
-            System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)>");
+            System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)> 2");
             return;
         }
-        if (args.length != 4) {
+        if (args.length != 6) {
             System.out.println("Wrong Input!!!");
             return;
         }
         try {
             serverPort = Integer.parseInt(args[0]);
             name = args[1];
+            serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
+            if (serverId > 3) {
+                System.out.println("wrong server id as input");
+                return;
+            }
             isMaster = "True".equals(args[2]);
             if (isMaster) checkpoint_freq = Integer.parseInt(args[3]) * 1000;
             else backup_id = Integer.parseInt(args[3]);
+            configNum = Integer.parseInt(args[4]);
+            i_am_ready = Integer.parseInt(args[5])==1? true : false;
             ServerSocket serverSocket = new ServerSocket(serverPort);
             System.out.println("Current port is " + serverPort + ", name is " + name);
+            System.out.println("Current server id is : " + serverId);
             System.out.println("The current server is Master ? " + isMaster);
+            System.out.println("The server is :" + (i_am_ready? "ready" : "not ready"));
 
             // primary server checkpoints the backups
-            if (isMaster ) {
+            if (isMaster) {
                 sendCheckpoints(1, checkpoint_freq);
                 sendCheckpoints(2, checkpoint_freq);
             }
             // backups receive checkpoints from primary server
             else {
-                receiveCheckpoints(backup_ports[backup_id-1]);
+                receiveCheckpoints(backup_ports[backup_id - 1]);
+            }
+
+            // if the server is ready, opens up two client sockets to other two servers
+            if (i_am_ready) {
+                for (int i = 0 ; i < recovery_ports.length; i++) {
+                    if (i != serverId-1) {
+                        sendRecoveryMsg(recovery_ports[i], checkpoint_freq);
+                    }
+                }
+            }
+            // if the server just ecovered, receive checkpoints and re-update the states
+            else {
+                receiveRecoveryMsg(recovery_ports[serverId-1], checkpoint_freq);
             }
 
             while (true) {
                 // waits for client to connect
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Accepting client connection...");
                 ServerHandler handler = new ServerHandler(clientSocket);
                 handler.start();
             }
@@ -67,11 +103,75 @@ public class Server extends Thread {
         }
     }
 
+    private static void sendRecoveryMsg(int port, int frequency) {
+        new Thread(() -> {
+            while (true) {
+                String line;
+                try (Socket socket = new Socket("localhost", port);
+                     BufferedReader in1 = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                     PrintWriter out1 = new PrintWriter(socket.getOutputStream(), true);
+                ) {
+                    printTimestamp();
+                    System.out.printf("Sending recovery checkpoint to the newly added server :");
+                    System.out.printf("my_state=%d %n", state);
+                    out1.printf("my_state=%d %n", state);
+                    break;
+                } catch (IOException e) {
+                    try {
+                        Thread.sleep(frequency * 1000);
+                    } catch (InterruptedException interruptedException) {
+                        interruptedException.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private static void receiveRecoveryMsg(int port, int frequency) {
+        new Thread(() -> {
+            try (ServerSocket serverSocket = new ServerSocket(port)) {
+                // waits for primary to send checkpoint message
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Ready to accept recovery checkpoint messages...");
+                while(true) {
+                    try (BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+                        String line;
+                        while ((line = clientInput.readLine()) != null) {
+                            printTimestamp();
+                            System.out.println("Receiving checkpoint from alive servers...");
+                            // Update my_state and checkpoint_count
+                            state = Integer.parseInt(line.split(" ")[0].split("=", 2)[1]);
+                            System.out.printf("Update to my_state=%d %n", state);
+
+                            synchronized (Server.class) {
+                                i_am_ready = true;
+                            }
+                            break;
+                        }
+                        if (i_am_ready) {
+                            for (int i = 0 ; i < recovery_ports.length; i++) {
+                                if (i != serverId-1) {
+                                    sendRecoveryMsg(recovery_ports[i], checkpoint_freq);
+                                }
+                            }
+                            return;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+    }
+
     private static void sendCheckpoints(int backup_id, int frequency) {
         new Thread(() -> {
             while (true) {
                 String line;
-                try (Socket socket = new Socket("localhost", backup_ports[backup_id-1]);
+                try (Socket socket = new Socket("localhost", backup_ports[backup_id - 1]);
                      BufferedReader in1 = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      PrintWriter out1 = new PrintWriter(socket.getOutputStream(), true);
                 ) {
@@ -85,7 +185,7 @@ public class Server extends Thread {
                             System.out.printf("my_state=%d checkpoint_count=%d%n", state, checkpoint_count);
                             out1.printf("my_state=%d checkpoint_count=%d%n", state, checkpoint_count);
                             line = in1.readLine();
-                            if (line == null){
+                            if (line == null) {
                                 synchronized (Server.class) {
                                     System.out.printf("Backup %d is dead %n", backup_id);
                                     alive_backups.remove(backup_id);
@@ -109,7 +209,7 @@ public class Server extends Thread {
                     } catch (InterruptedException | IOException e) {
                         return;
                     }
-                } catch(IOException e) {
+                } catch (IOException e) {
                     continue;
                 }
             }
@@ -176,6 +276,7 @@ public class Server extends Thread {
                 if (tokens != null && tokens.length > 0) {
                     String client = tokens[0];
                     Integer requestNum = Integer.valueOf(tokens[1]);
+                    if (!i_am_ready) high_watermark = requestNum;
                     String msg = tokens[2];
 
                     if (client.contains("LFD")) {
@@ -183,9 +284,14 @@ public class Server extends Thread {
                     } else {
                         receiveRequest(client, requestNum, msg);
                         // In passive replication, only master sends back the response and updates state
-                        if (isMaster) {
-                            printState(msg);
-                            sendReply(client, requestNum, msg);
+                        if (isMaster || configNum == 1) {
+                            if (i_am_ready) {
+                                printState(msg);
+                                sendReply(client, requestNum, msg);
+                            }else {
+                                msg += "alive \n";
+                                out.write(msg.getBytes());
+                            }
                         }
                     }
                 }
@@ -225,7 +331,11 @@ public class Server extends Thread {
 
         private void receiveRequest(String client, Integer requestNum, String msg) {
             printTimestamp();
-            System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
+            if(i_am_ready) {
+                System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
+            } else {
+                System.out.printf("Receiving <%s, %s, high_watermark_request_num: %s, request> %s %n", client, name, high_watermark, msg);
+            }
         }
 
         private void sendReply(String client, Integer requestNum, String msg) throws IOException {
@@ -243,3 +353,4 @@ public class Server extends Thread {
         System.out.printf("[ %s ] ", timeStamp);
     }
 }
+

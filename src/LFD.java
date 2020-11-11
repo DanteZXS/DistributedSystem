@@ -4,8 +4,6 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.xml.catalog.Catalog;
-
 /**
  * A local fault detector runs on the same machines as the
  * server to detect whether the server is dead or not.
@@ -132,7 +130,6 @@ public class LFD implements Runnable {
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
         System.out.printf("[ %s ] ", timeStamp);
     }
-
 
 
 }
