@@ -27,15 +27,12 @@ public class Server extends Thread {
     private static int serverId;
     private static int high_watermark;
 
-<<<<<<< HEAD
-=======
     /** Each active server will open up two TCP connections as a client socket to the other
      * two active servers; when a server dead and recovers, it opens up the a server socket to receive
      * checkpoints from the other alive servers; after it is updated to the correct states, it re-opens two
      * client sockets.*/
     private final static int[] recovery_ports = {601, 602, 603};
 
->>>>>>> valentine
 
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
