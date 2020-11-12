@@ -13,6 +13,8 @@ public class Server extends Thread {
     private static boolean isMaster;
     private static int configNum;
 
+    private static int replicaPort;
+
     /**
      * The following section is for passive replication
      */
@@ -27,41 +29,51 @@ public class Server extends Thread {
     private static int serverId;
     private static int high_watermark;
 
+    private boolean changeStatus;
+
     /** Each active server will open up two TCP connections as a client socket to the other
      * two active servers; when a server dead and recovers, it opens up the a server socket to receive
      * checkpoints from the other alive servers; after it is updated to the correct states, it re-opens two
      * client sockets.*/
     private final static int[] recovery_ports = {601, 602, 603};
 
+    public Server() {
+        changeStatus = false;
+    }
+
 
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
             System.out.println("If launching the primary server:");
-            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> 2 <# of the same server kind>");
+            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> <1 for active 2 for passive> <# of the same server kind> <RM port>");
             System.out.println("If launching the backup server:");
-            System.out.println("<heartbeat_port> <server_name> False <id (either 0 or 1)> 2");
+            System.out.println("<heartbeat_port> <server_name> False <id (either 1 or 2)> <1 for active 2 for passive> <RM port>");
             return;
         }
-        if (args.length != 6) {
+        if (args.length != 7) {
             System.out.println("Wrong Input!!!");
             return;
         }
-        try {
-            serverPort = Integer.parseInt(args[0]);
-            name = args[1];
-            serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
-            if (serverId > 3) {
-                System.out.println("wrong server id as input");
-                return;
-            }
-            isMaster = "True".equals(args[2]);
-            if (isMaster) checkpoint_freq = Integer.parseInt(args[3]) * 1000;
-            else backup_id = Integer.parseInt(args[3]);
-            configNum = Integer.parseInt(args[4]);
-            i_am_ready = Integer.parseInt(args[5])==1? true : false;
-            ServerSocket serverSocket = new ServerSocket(serverPort);
-            System.out.println("Current port is " + serverPort + ", name is " + name);
+        serverPort = Integer.parseInt(args[0]);
+        name = args[1];
+        serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
+        if (serverId > 3) {
+            System.out.println("wrong server id as input");
+            return;
+        }
+        isMaster = "True".equals(args[2]);
+        if (isMaster) checkpoint_freq = Integer.parseInt(args[3]) * 1000;
+        else backup_id = Integer.parseInt(args[3]);
+        configNum = Integer.parseInt(args[4]);
+        i_am_ready = Integer.parseInt(args[5])==1? true : false;
+
+        // setup a connectiong with replica manager
+        replicaPort = Integer.parseInt(args[6]);
+        acceptReplica(replicaPort);
+        try(ServerSocket serverSocket = new ServerSocket(serverPort);) {
+            System.out.println("Replica Manager port is " + replicaPort);
+            System.out.println("Current server port is " + serverPort + ", name is " + name);
             System.out.println("Current server id is : " + serverId);
             System.out.println("The current server is Master ? " + isMaster);
             System.out.println("The server is :" + (i_am_ready? "ready" : "not ready"));
@@ -98,6 +110,37 @@ public class Server extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+
+    private static void acceptReplica(int replicaPort) {
+        new Thread(() ->{
+            try(ServerSocket serverReplicaSocket = new ServerSocket(replicaPort);) {
+                while(true) {
+                    Socket clientServer = serverReplicaSocket.accept();
+                    BufferedReader clientInput = new BufferedReader(new InputStreamReader(clientServer.getInputStream()));
+                    String line;
+                    while ((line = clientInput.readLine()) != null) {
+                        System.out.println("get message from RM: " + line);
+                        String[] tokens = line.split("\\s+");
+                        if (tokens[0].equals("change")) {
+                            //TO-DO if this server get "change" message means that it is becoming primary
+                        }
+                    }
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+        
+    }
+
+
+
+
+    private void statusChange() {
+        changeStatus = true;
     }
 
     private static void sendRecoveryMsg(int port, int frequency) {
@@ -166,6 +209,7 @@ public class Server extends Thread {
 
     private static void sendCheckpoints(int backup_id, int frequency) {
         new Thread(() -> {
+            // while (!changeStatus) {
             while (true) {
                 String line;
                 try (Socket socket = new Socket("localhost", backup_ports[backup_id - 1]);
@@ -217,6 +261,7 @@ public class Server extends Thread {
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
                 // waits for primary to send checkpoint message
+                // while (!changeStatus) {
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Ready to accept primary server checkpoint messages...");
@@ -299,7 +344,8 @@ public class Server extends Thread {
         private void heartbeat(String LFD) throws IOException {
             printTimestamp();
             System.out.printf("Acknowledge heartbeat from %s %n", LFD);
-            String reply = "heartbeat\n";
+            // String reply = "heartbeat\n";
+            String reply = String.format("RM:add replica S%d %s %d%n", serverId, isMaster, replicaPort);
             out.write(reply.getBytes());
         }
 

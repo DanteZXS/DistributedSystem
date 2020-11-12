@@ -90,10 +90,9 @@ public class GFD {
 
 
     private static void sendMessageToRm(String msg){
-        // System.out.println(msg);
         try (Socket socket = new Socket("localhost", RM_PORT);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
             out.println(msg);
         } catch(IOException e) {
             return;
@@ -143,6 +142,10 @@ public class GFD {
                 // get LFD id
                 tokens = line.split(":", 2);
                 String lfd = tokens[0];
+                if (lfd.equals("RM")) {
+                    sendMessageToRm(line);
+                    continue;
+                }
                 // get command "add' or "delete"
                 tokens = tokens[1].split(" ", 3);
                 String cmd = tokens[0];
@@ -155,7 +158,6 @@ public class GFD {
                             membership.add(server);
                             member_count++;
                             printMembers();
-                            System.out.println("line: " + line);
                             sendMessageToRm(line);
                         }
                     }
@@ -167,7 +169,6 @@ public class GFD {
                             membership.remove(server);
                             member_count--;
                             printMembers();
-                            System.out.println("line: " + line);
                             sendMessageToRm(line);
                         }
                     }

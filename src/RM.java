@@ -1,9 +1,12 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class RM {
@@ -11,6 +14,9 @@ public class RM {
     private static final int port = 2019;
     private static int member_count = 0;
     private static Set<String> membership = new HashSet<>();
+    private static Map<String, Integer> addressMap = new HashMap<>();
+    private static String primaryServer;
+    private static final String HOST_NAME = "localhost";
     
     public static void main(String[] args) {
         try(ServerSocket serverSocket = new ServerSocket(port);) {
@@ -28,6 +34,59 @@ public class RM {
 
     }
 
+    private static void fillMap(String serverId, int rmPort, boolean isMaster) {
+        if (isMaster) {
+            if (!serverId.equals(primaryServer)) {
+                primaryServer = serverId;
+                printPrimary();
+            }
+        }
+        if (!addressMap.containsKey(serverId)) {
+            addressMap.put(serverId, rmPort);
+        }
+
+    }
+
+    private static void printPrimary() {
+        System.out.println("current primary: " + primaryServer);
+    }
+
+
+
+    private static void selectNewPrimary(String server) {
+        if (primaryServer.equals(server)) {
+            if (addressMap.size() == 0) {
+                return;
+            }
+            String primaryElect;
+            int serverPort;
+            for (Map.Entry<String, Integer> entry: addressMap.entrySet()) {
+                primaryElect = entry.getKey();
+                serverPort = entry.getValue();
+                primaryServer = primaryElect;
+                printPrimary();
+                System.out.println("server port need to send change: "+ serverPort);
+                sendChange(serverPort);
+                return;
+            }
+
+
+        }
+    }
+
+
+    private static void sendChange(int serverPort) {
+
+        try(Socket socket = new Socket(HOST_NAME, serverPort);
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+
+            out.println("change");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void startConnecting(ServerSocket serverSocket) {
         try {
 
@@ -42,11 +101,25 @@ public class RM {
                 // get LFD id
                 tokens = line.split(":", 2);
                 String lfd = tokens[0];
+
+                if (lfd.equals("RM")) {
+                    // System.out.println("msg: " + line);
+                    tokens = tokens[1].split("\\s+");
+                    String serverId = tokens[2];
+                    boolean isMaster = tokens[3].equals("true") ? true: false;
+                    int rmPort = Integer.parseInt(tokens[4]);
+                    fillMap(serverId, rmPort, isMaster);
+                    continue;
+
+                }
+
+
                 // get command "add' or "delete"
                 tokens = tokens[1].split(" ", 3);
                 String cmd = tokens[0];
                 // get replica id
                 String server = tokens[2];
+
                 if (cmd.equals("add")) {
                     if (!membership.contains(server)) {
                         // add membership
@@ -62,6 +135,8 @@ public class RM {
                         membership.remove(server);
                         member_count--;
                         printMembers();
+                        addressMap.remove(server);
+                        selectNewPrimary(server);
                     }
                 }
             }
