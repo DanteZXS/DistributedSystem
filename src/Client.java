@@ -95,38 +95,26 @@ public class Client {
     }
 
     private void receiveReply(BufferedReader in1, BufferedReader in2, BufferedReader in3) throws IOException {
-        // Duplicate detection
-        boolean flag = true;
-        // Get the reply from the 1st Server
-        try {
-            printTimestamp();
-            String[] msgArr1 = in1.readLine().split(" ", 2);
-            Integer requestNum1 = Integer.valueOf(msgArr1[0]);
-            String msg1 = msgArr1[1];
-            if (flag) {
-                System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
-                flag = false;
-            } else {
-                System.out.printf("[DISCARDED] Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
-            }
-        } catch (Exception e) {
-            System.out.println("Looks like S1 is dead");
-//                alive[0] = false;
-//                new Thread(() -> {
-//                    while (!alive[0]) {
-//                        try {
-//                            this.socket1 = new Socket(this.hostname, this.port1);
-//                            this.in1 = new BufferedReader(new InputStreamReader(socket1.getInputStream()));
-//                            this.out1 = new PrintWriter(socket1.getOutputStream(), true);
-//                            alive[0] = true;
-//                        } catch (IOException ioException) {
-//                        }
-//                    }
-//                }).start();
-        }
-
         if (configNum == 1) {
-
+            // Active replication
+            // Duplicate detection
+            boolean flag = true;
+            // Get the reply from the 1st Server
+            try {
+                printTimestamp();
+                String[] msgArr1 = in1.readLine().split(" ", 2);
+                Integer requestNum1 = Integer.valueOf(msgArr1[0]);
+                String msg1 = msgArr1[1];
+                if (flag) {
+                    System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+                    flag = false;
+                } else {
+                    System.out.printf("[DISCARDED] Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+                }
+            } catch (Exception e) {
+                System.out.println("Looks like S1 is dead");
+            }
+            // Get the reply from the 2nd Server
             try {
                 printTimestamp();
                 String[] msgArr2 = in2.readLine().split(" ", 2);
@@ -140,18 +128,6 @@ public class Client {
                 }
             } catch (Exception e) {
                 System.out.println("Looks like S2 is dead");
-//                    alive[1] = false;
-//                    new Thread(() -> {
-//                        while (!alive[1]) {
-//                            try {
-//                                this.socket2 = new Socket(this.hostname, this.port2);
-//                                this.in2 = new BufferedReader(new InputStreamReader(socket2.getInputStream()));
-//                                this.out2 = new PrintWriter(socket2.getOutputStream(), true);
-//                                alive[1] = true;
-//                            } catch (IOException ioException) {
-//                            }
-//                        }
-//                    }).start();
             }
 
             // Get the reply from the 3rd Server
@@ -168,19 +144,45 @@ public class Client {
                 }
             } catch (Exception e) {
                 System.out.println("Looks like S3 is dead");
-//                    alive[2] = false;
-//                    new Thread(() -> {
-//                        while (!alive[2]) {
-//                            try {
-//                                this.socket3 = new Socket(this.hostname, this.port3);
-//                                this.in3 = new BufferedReader(new InputStreamReader(socket3.getInputStream()));
-//                                this.out3 = new PrintWriter(socket3.getOutputStream(), true);
-//                                alive[2] = true;
-//                                System.out.println("is alive");
-//                            } catch (IOException ioException) {
-//                            }
-//                        }
-//                    }).start();
+            }
+        } else {
+            // Passive replication
+            boolean isPrimary = false;
+            // How to identify primary server? The message won't end with the word "alive"
+
+            // Check the first server
+            String incomingMessage1 = in1.readLine();
+            isPrimary = !incomingMessage1.endsWith("backup ");
+            if (isPrimary) {
+                printTimestamp();
+                String[] msgArr1 = incomingMessage1.split(" ", 2);
+                Integer requestNum1 = Integer.valueOf(msgArr1[0]);
+                String msg1 = msgArr1[1];
+                System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+                return;
+            }
+
+            // Check the second server
+            String incomingMessage2 = in2.readLine();
+            isPrimary = !incomingMessage2.endsWith("backup ");
+            if (isPrimary) {
+                printTimestamp();
+                String[] msgArr2 = incomingMessage2.split(" ", 2);
+                Integer requestNum2 = Integer.valueOf(msgArr2[0]);
+                String msg2 = msgArr2[1];
+                System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
+                return;
+            }
+
+            // Check the third server
+            String incomingMessage3 = in3.readLine();
+            isPrimary = !incomingMessage3.endsWith("backup ");
+            if (isPrimary) {
+                printTimestamp();
+                String[] msgArr3 = incomingMessage3.split(" ", 2);
+                Integer requestNum3 = Integer.valueOf(msgArr3[0]);
+                String msg3 = msgArr3[1];
+                System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
             }
         }
     }
