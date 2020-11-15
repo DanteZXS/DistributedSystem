@@ -151,39 +151,54 @@ public class Client {
             // How to identify primary server? The message won't end with the word "alive"
 
             // Check the first server
-            String incomingMessage1 = in1.readLine();
-            isPrimary = !incomingMessage1.endsWith("backup ");
-            if (isPrimary) {
-                printTimestamp();
-                String[] msgArr1 = incomingMessage1.split(" ", 2);
-                Integer requestNum1 = Integer.valueOf(msgArr1[0]);
-                String msg1 = msgArr1[1];
-                System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
-                return;
+            try {
+                String incomingMessage1 = in1.readLine();
+                isPrimary = !incomingMessage1.endsWith("backup ");
+                if (isPrimary) {
+                    printTimestamp();
+                    String[] msgArr1 = incomingMessage1.split(" ", 2);
+                    Integer requestNum1 = Integer.valueOf(msgArr1[0]);
+                    String msg1 = msgArr1[1];
+                    System.out.printf("Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
+                    return;
+                }
+            } catch (Exception e) {
+                System.out.println("Looks like S1 is dead");
             }
+
 
             // Check the second server
-            String incomingMessage2 = in2.readLine();
-            isPrimary = !incomingMessage2.endsWith("backup ");
-            if (isPrimary) {
-                printTimestamp();
-                String[] msgArr2 = incomingMessage2.split(" ", 2);
-                Integer requestNum2 = Integer.valueOf(msgArr2[0]);
-                String msg2 = msgArr2[1];
-                System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
-                return;
+            try {
+                String incomingMessage2 = in2.readLine();
+                isPrimary = !incomingMessage2.endsWith("backup ");
+                if (isPrimary) {
+                    printTimestamp();
+                    String[] msgArr2 = incomingMessage2.split(" ", 2);
+                    Integer requestNum2 = Integer.valueOf(msgArr2[0]);
+                    String msg2 = msgArr2[1];
+                    System.out.printf("Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
+                    return;
+                }
+            } catch (Exception e) {
+                System.out.println("Looks like S2 is dead");
             }
 
+
             // Check the third server
-            String incomingMessage3 = in3.readLine();
-            isPrimary = !incomingMessage3.endsWith("backup ");
-            if (isPrimary) {
-                printTimestamp();
-                String[] msgArr3 = incomingMessage3.split(" ", 2);
-                Integer requestNum3 = Integer.valueOf(msgArr3[0]);
-                String msg3 = msgArr3[1];
-                System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
+            try {
+                String incomingMessage3 = in3.readLine();
+                isPrimary = !incomingMessage3.endsWith("backup ");
+                if (isPrimary) {
+                    printTimestamp();
+                    String[] msgArr3 = incomingMessage3.split(" ", 2);
+                    Integer requestNum3 = Integer.valueOf(msgArr3[0]);
+                    String msg3 = msgArr3[1];
+                    System.out.printf("Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
+                }
+            } catch (Exception e) {
+                System.out.println("Looks like S3 is dead");
             }
+
         }
     }
 
