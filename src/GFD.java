@@ -15,22 +15,19 @@ public class GFD {
     private final static int port = 8888;
     public static int member_count;
     private static Set<String> membership = new HashSet<>();
-    private static int port1;
-    private static int port2;
-    private static int port3;
+    private static int port1 = 985;
+    private static int port2 = 211;
+    private static int port3 = 2020;
     private static int frequency;
-
+    private static final int RM_PORT = 2019;
 
     public static void main(String[] args) {
-        if (args.length != 4) {
-            System.out.println("Wrong input!!! Sample input: java GFD [port1] [port2] [port3] frequency");
+        if (args.length != 1) {
+            System.out.println("Wrong input!!! Sample input: java GFD [frequency]");
             return;
         }
 
-        port1 = Integer.parseInt(args[0]);
-        port2 = Integer.parseInt(args[1]);
-        port3 = Integer.parseInt(args[2]);
-        frequency = Integer.parseInt(args[3]);
+        frequency = Integer.parseInt(args[0]);
 
 
         try(ServerSocket serverSocket = new ServerSocket(port);) {
@@ -85,8 +82,18 @@ public class GFD {
             }
 
 
-
         }).start();
+    }
+
+
+    private static void sendMessageToRm(String msg){
+        try (Socket socket = new Socket("localhost", RM_PORT);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+            out.println(msg);
+        } catch(IOException e) {
+            return;
+        }
     }
 
 
@@ -132,6 +139,10 @@ public class GFD {
                 // get LFD id
                 tokens = line.split(":", 2);
                 String lfd = tokens[0];
+                if (lfd.equals("RM")) {
+                    sendMessageToRm(line);
+                    continue;
+                }
                 // get command "add' or "delete"
                 tokens = tokens[1].split(" ", 3);
                 String cmd = tokens[0];
@@ -144,6 +155,7 @@ public class GFD {
                             membership.add(server);
                             member_count++;
                             printMembers();
+                            sendMessageToRm(line);
                         }
                     }
                 }
@@ -154,6 +166,7 @@ public class GFD {
                             membership.remove(server);
                             member_count--;
                             printMembers();
+                            sendMessageToRm(line);
                         }
                     }
                 }
