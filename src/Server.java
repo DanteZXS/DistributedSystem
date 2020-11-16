@@ -35,6 +35,11 @@ public class Server extends Thread {
 
     private AtomicBoolean changeStatus;
 
+
+    private AtomicBoolean changeStatusReceive;
+
+    private ServerSocket receiveServerSocket;
+
     /**
      * Each active server will open up two TCP connections as a client socket to the other
      * two active servers; when a server dead and recovers, it opens up the a server socket to receive
@@ -45,6 +50,7 @@ public class Server extends Thread {
 
     public Server() {
         changeStatus = new AtomicBoolean(false);
+        changeStatusReceive = new AtomicBoolean(false);
     }
 
 
@@ -144,19 +150,27 @@ public class Server extends Thread {
                 }
 
                 changeStatus.set(true);
+                changeStatusReceive.set(true);
                 if (sendCheckPointThread != null) {
                     sendCheckPointThread.interrupt();
                 }
                 if (receiveCheckPointThread != null) {
                     receiveCheckPointThread.interrupt();
                 }
+
+
                 changeStatus.set(false);
                 System.out.println("change status: " + changeStatus);
-                if (backup_id == 1)
-                    sendCheckpoints(2, 3);
-                else
-                    sendCheckpoints(1, 3);
 
+                if (receiveServerSocket != null) {
+                    receiveServerSocket.close();
+                }
+
+
+                sendCheckpoints(2, 3);
+                sendCheckpoints(1, 3);
+
+                
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -293,7 +307,8 @@ public class Server extends Thread {
         receiveCheckPointThread = new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
                 // waits for primary to send checkpoint message
-                while (!changeStatus.get()) {
+                while (!changeStatusReceive.get()) {
+                        receiveServerSocket = serverSocket;
                     // while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Ready to accept primary server checkpoint messages...");
@@ -310,13 +325,17 @@ public class Server extends Thread {
                             clientOutput.write("Accepted checkpoints \n".getBytes());
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        // e.printStackTrace();
+                        return;
                     }
 
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+
             }
+         } catch (Exception e) {
+                // e.printStackTrace();
+                return;
+            }
+
         });
         receiveCheckPointThread.start();
     }
