@@ -11,7 +11,7 @@ public class Server extends Thread {
     private static int serverPort;
     private static String name;
     private static int state;
-    private static AtomicBoolean isMaster;
+    private static boolean isMaster;
     private static int configNum;
 
     private static int replicaPort;
@@ -24,6 +24,10 @@ public class Server extends Thread {
     private static int checkpoint_count = 1;
     private static int prev_count = 1;
     private final static int[] backup_ports = {700, 701};
+
+    private final static int[] RM_ports = {666, 665, 664};
+    private final static int[] server_ports = {1234, 1235, 1236};
+
     private static Set<Integer> alive_backups = new HashSet<>();
 
     private static boolean i_am_ready;
@@ -35,6 +39,11 @@ public class Server extends Thread {
 
     private AtomicBoolean changeStatus;
 
+
+    private AtomicBoolean changeStatusReceive;
+
+    private ServerSocket receiveServerSocket;
+
     /**
      * Each active server will open up two TCP connections as a client socket to the other
      * two active servers; when a server dead and recovers, it opens up the a server socket to receive
@@ -45,38 +54,53 @@ public class Server extends Thread {
 
     public Server() {
         changeStatus = new AtomicBoolean(false);
+        changeStatusReceive = new AtomicBoolean(false);
     }
 
 
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
-            System.out.println("If launching the primary server:");
-            System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> <1 for active 2 for passive> <# of the same server kind> <RM port>");
-            System.out.println("If launching the backup server:");
-            System.out.println("<heartbeat_port> <server_name> False <id (either 1 or 2)> <1 for active 2 for passive> <# of the same server kind> <RM port>");
+            System.out.println("<server_name> <server config > <checkpoint_freq> <# of the same server kind>");
+            System.out.println("server config - A : active ; P : passive (primary); B<id> : passive (backup 1 or 2) ");
             return;
         }
-        if (args.length != 7) {
+        if (args.length != 4) {
             System.out.println("Wrong Input!!!");
             return;
         }
-        serverPort = Integer.parseInt(args[0]);
-        name = args[1];
+
+        name = args[0];
         serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
         if (serverId > 3) {
             System.out.println("wrong server id as input");
             return;
         }
-        boolean var = "True".equals(args[2]);
-        isMaster = new AtomicBoolean(var);
-        if (isMaster.get()) checkpoint_freq = Integer.parseInt(args[3]);
-        else backup_id = Integer.parseInt(args[3]);
-        configNum = Integer.parseInt(args[4]);
-        i_am_ready = Integer.parseInt(args[5]) == 1 ? true : false;
+        serverPort = server_ports[serverId - 1];
+
+        // check config and backup id
+        if (args[1].contains("A")) {
+            configNum = 1;
+            isMaster = true;
+        } else {
+            configNum = 2;
+            if (args[1].contains("P")) {
+                isMaster = true;
+            } else {
+                isMaster = false;
+                backup_id = Integer.parseInt(args[1].replaceAll("[\\D]", ""));
+                if (!(backup_id == 1 || backup_id == 2)) {
+                    System.out.println("wrong backup id");
+                    return;
+                }
+            }
+        }
+        checkpoint_freq = Integer.parseInt(args[2]);
+
+        i_am_ready = Integer.parseInt(args[3]) == 1 ? true : false;
 
         // setup a connectiong with replica manager
-        replicaPort = Integer.parseInt(args[6]);
+        replicaPort = RM_ports[serverId - 1];
 
         // create a server object, changeStatus is false at beginning
         Server curServer = new Server();
@@ -91,13 +115,15 @@ public class Server extends Thread {
             System.out.println("The server is :" + (i_am_ready ? "ready" : "not ready"));
 
             // primary server checkpoints the backups
-            if (isMaster.get()) {
-                curServer.sendCheckpoints(1, checkpoint_freq);
-                curServer.sendCheckpoints(2, checkpoint_freq);
-            }
-            // backups receive checkpoints from primary server
-            else {
-                curServer.receiveCheckpoints(backup_ports[backup_id - 1]);
+            if (configNum == 2) {
+                if (isMaster) {
+                    curServer.sendCheckpoints(1, checkpoint_freq);
+                    curServer.sendCheckpoints(2, checkpoint_freq);
+                }
+                // backups receive checkpoints from primary server
+                else {
+                    curServer.receiveCheckpoints(backup_ports[backup_id - 1]);
+                }
             }
 
             // if the server is ready, opens up two client sockets to other two servers
@@ -138,7 +164,7 @@ public class Server extends Thread {
                         String[] tokens = line.split("\\s+");
                         if (tokens[0].equals("change")) {
                             //TO-DO if this server get "change" message means that it is becoming primary
-                            isMaster.set(true);
+                            isMaster = true;
                             break;
                         }
                     }
@@ -146,18 +172,26 @@ public class Server extends Thread {
                 }
 
                 changeStatus.set(true);
+                changeStatusReceive.set(true);
                 if (sendCheckPointThread != null) {
                     sendCheckPointThread.interrupt();
                 }
                 if (receiveCheckPointThread != null) {
                     receiveCheckPointThread.interrupt();
                 }
+
+
                 changeStatus.set(false);
                 System.out.println("change status: " + changeStatus);
-                if (backup_id == 1)
-                    sendCheckpoints(2, 3);
-                else
-                    sendCheckpoints(1, 3);
+
+                if (receiveServerSocket != null) {
+                    receiveServerSocket.close();
+                }
+
+
+                sendCheckpoints(2, checkpoint_freq);
+                sendCheckpoints(1, checkpoint_freq);
+
 
 
             } catch (Exception e) {
@@ -253,7 +287,7 @@ public class Server extends Thread {
                         synchronized (Server.class) {
                             alive_backups.add(backup_id);
                         }
-                        while (!changeStatus.get()) {
+                        while (true) {
                             printTimestamp();
                             System.out.printf("Sending checkpoint to backup %d :", backup_id);
                             System.out.printf("my_state=%d checkpoint_count=%d%n", state, checkpoint_count);
@@ -295,7 +329,8 @@ public class Server extends Thread {
         receiveCheckPointThread = new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
                 // waits for primary to send checkpoint message
-                while (!changeStatus.get()) {
+                while (!changeStatusReceive.get()) {
+                    receiveServerSocket = serverSocket;
                     // while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Ready to accept primary server checkpoint messages...");
@@ -312,13 +347,17 @@ public class Server extends Thread {
                             clientOutput.write("Accepted checkpoints \n".getBytes());
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        // e.printStackTrace();
+                        return;
                     }
 
+
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                // e.printStackTrace();
+                return;
             }
+
         });
         receiveCheckPointThread.start();
     }
@@ -361,7 +400,7 @@ public class Server extends Thread {
                     } else {
                         receiveRequest(client, requestNum, msg);
                         // In passive replication, only master sends back the response and updates state
-                        if (isMaster.get() || configNum == 1) {
+                        if (isMaster || configNum == 1) {
                             if (i_am_ready) {
                                 printState(msg);
                                 sendReply(client, requestNum, msg);

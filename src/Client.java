@@ -28,19 +28,17 @@ public class Client {
     public static int requestNum;
 
     // Indicate which config the server is using
-    public int configNum;
 
     private static Client client;
 //    private boolean alive[] = {true, true, true};
 
-    public Client(String hostname, String name, int configNum) {
+    public Client(String hostname, String name) {
         this.hostname = hostname;
         this.name = name;
-        this.configNum = configNum;
     }
 
     public static void main(String[] args) throws IOException {
-        client = new Client("localhost", args[0], Integer.parseInt(args[1]));
+        client = new Client("localhost", args[0]);
         client.connect();
         client.chat();
     }
@@ -135,8 +133,6 @@ public class Client {
         boolean flag = true;
         // Get the reply from the 1st Server
         try {
-//            if (!in1.readLine().endsWith("backup ")) {
-//                printTimestamp();
                 String[] msgArr1 = in1.readLine().split(" ", 2);
                 Integer requestNum1 = Integer.valueOf(msgArr1[0]);
                 String msg1 = msgArr1[1];
@@ -147,17 +143,14 @@ public class Client {
                 } else {
                     printTimestamp();
                     System.out.printf("[DISCARDED] Received <%s, S1, request_num = %s, reply> %s %n", this.name, requestNum1, msg1);
-//                }
             }
         } catch (Exception e) {
 //            System.out.println("Looks like S1 is dead");
         }
 
-//        if (configNum == 1) {
 
             try {
-//                if (!in2.readLine().endsWith("backup ")) {
-//                    printTimestamp();
+
                     String[] msgArr2 = in2.readLine().split(" ", 2);
                     Integer requestNum2 = Integer.valueOf(msgArr2[0]);
                     String msg2 = msgArr2[1];
@@ -169,15 +162,13 @@ public class Client {
                         printTimestamp();
                         System.out.printf("[DISCARDED] Received <%s, S2, request_num = %s, reply> %s %n", this.name, requestNum2, msg2);
                     }
-//                }
             } catch (Exception e) {
 //                System.out.println("Looks like S2 is dead");
             }
 
             // Get the reply from the 3rd Server
             try {
-//                if (!in3.readLine().endsWith("backup ")) {
-//                    printTimestamp();
+
                     String[] msgArr3 = in3.readLine().split(" ", 2);
                     Integer requestNum3 = Integer.valueOf(msgArr3[0]);
                     String msg3 = msgArr3[1];
@@ -189,11 +180,9 @@ public class Client {
                         printTimestamp();
                         System.out.printf("[DISCARDED] Received <%s, S3, request_num = %s, reply> %s %n", this.name, requestNum3, msg3);
                     }
-//                }
             } catch (Exception e) {
 //                System.out.println("Looks like S3 is dead");
             }
-//        }
     }
 
     private void printTimestamp() {
