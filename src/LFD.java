@@ -46,7 +46,6 @@ public class LFD implements Runnable {
 
         // user-defined port number and heartbeat frequency
         LFD fd = new LFD("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
-
         // port of lfd that can be used by GFD, this server socket is used for accepting heatbead from GFD
         new Thread(() -> {
 
@@ -90,6 +89,18 @@ public class LFD implements Runnable {
         }
     }
 
+
+    private void notifyGfd(String msg) {
+        try {
+            gfdSocket = new Socket("localhost", 8888);
+            gfdOut = new PrintWriter(gfdSocket.getOutputStream(), true);
+            gfdOut.println(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void connect() {
         while (true) {
             try {
@@ -117,6 +128,7 @@ public class LFD implements Runnable {
                 else {
                     printTimestamp();
                     System.out.printf("[%s] %s receives heartbeat from %s %n", heartbeat_count, LFD_ID, SERVER_ID);
+                    notifyGfd(line);
                 }
                 heartbeat_count++;
                 Thread.sleep(this.freq * 1000);
