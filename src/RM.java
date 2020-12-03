@@ -17,10 +17,19 @@ public class RM {
     private static Map<String, Integer> addressMap = new HashMap<>();
     private static String primaryServer;
     private static final String HOST_NAME = "localhost";
+<<<<<<< HEAD
     
     public static void main(String[] args) {
         try(ServerSocket serverSocket = new ServerSocket(port);) {
 
+=======
+
+    private static boolean autoMode = false;
+
+    public static void main(String[] args) {
+        if (args[0].toLowerCase().equals("auto")) autoMode = true;
+        try(ServerSocket serverSocket = new ServerSocket(port);) {
+>>>>>>> master
             System.out.println("Launching RM ...");
             printMembers();
             while (true) {
@@ -30,8 +39,11 @@ public class RM {
         } catch (IOException e) {
             e.printStackTrace();
         }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> master
     }
 
     private static void fillMap(String serverId, int rmPort, boolean isMaster) {
@@ -44,7 +56,10 @@ public class RM {
         if (!addressMap.containsKey(serverId)) {
             addressMap.put(serverId, rmPort);
         }
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     }
 
     private static void printPrimary() {
@@ -69,8 +84,11 @@ public class RM {
                 sendChange(serverPort);
                 return;
             }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> master
         }
     }
 
@@ -78,7 +96,11 @@ public class RM {
     private static void sendChange(int serverPort) {
 
         try(Socket socket = new Socket(HOST_NAME, serverPort);
+<<<<<<< HEAD
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+=======
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);) {
+>>>>>>> master
 
             out.println("change");
 
@@ -89,13 +111,20 @@ public class RM {
 
     private static void startConnecting(ServerSocket serverSocket) {
         try {
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
             Socket gfdSocket = serverSocket.accept();
             BufferedReader in = new BufferedReader(new InputStreamReader(gfdSocket.getInputStream()));
             String line;
 
             while ((line = in.readLine()) != null) {
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> master
                 // actively listening to replica status notified by LFD
                 String[] tokens;
                 // get LFD id
@@ -110,10 +139,15 @@ public class RM {
                     int rmPort = Integer.parseInt(tokens[4]);
                     fillMap(serverId, rmPort, isMaster);
                     continue;
+<<<<<<< HEAD
 
                 }
 
 
+=======
+                }
+
+>>>>>>> master
                 // get command "add' or "delete"
                 tokens = tokens[1].split(" ", 3);
                 String cmd = tokens[0];
@@ -137,6 +171,7 @@ public class RM {
                         printMembers();
                         addressMap.remove(server);
                         selectNewPrimary(server);
+<<<<<<< HEAD
                     }
                 }
             }
@@ -148,6 +183,20 @@ public class RM {
         } catch (IOException e) {
             e.printStackTrace();
         } 
+=======
+                        // if in auto mode, recover dead replica
+                        if (autoMode) {
+                            Runtime.getRuntime().exec("javac Server.java");
+                            Runtime.getRuntime().exec("java Server " +  server + " A" + " 5 2");
+                            System.out.println("successfully execute");
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+>>>>>>> master
 
     }
     private static void printMembers() {
@@ -157,6 +206,7 @@ public class RM {
         }
         System.out.println();
     }
+<<<<<<< HEAD
 
 
 
@@ -164,4 +214,6 @@ public class RM {
 
 
 
+=======
+>>>>>>> master
 }

@@ -1,3 +1,6 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -6,6 +9,11 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+<<<<<<< HEAD
+=======
+
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+>>>>>>> master
 
 public class Server extends Thread {
     private static int serverPort;
@@ -24,6 +32,10 @@ public class Server extends Thread {
     private static int checkpoint_count = 1;
     private static int prev_count = 1;
     private final static int[] backup_ports = {700, 701};
+
+    private final static int[] RM_ports = {666, 665, 664};
+    private final static int[] server_ports = {1234, 1235, 1236};
+
     private static Set<Integer> alive_backups = new HashSet<>();
 
     private static boolean i_am_ready;
@@ -35,11 +47,19 @@ public class Server extends Thread {
 
     private AtomicBoolean changeStatus;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     private AtomicBoolean changeStatusReceive;
 
     private ServerSocket receiveServerSocket;
 
+<<<<<<< HEAD
+=======
+    private static TextArea textArea;
+
+>>>>>>> master
     /**
      * Each active server will open up two TCP connections as a client socket to the other
      * two active servers; when a server dead and recovers, it opens up the a server socket to receive
@@ -48,15 +68,23 @@ public class Server extends Thread {
      */
     private final static int[] recovery_ports = {601, 602, 603};
 
+<<<<<<< HEAD
     public Server() {
         changeStatus = new AtomicBoolean(false);
         changeStatusReceive = new AtomicBoolean(false);
+=======
+    public Server(String[] args) {
+        changeStatus = new AtomicBoolean(false);
+        changeStatusReceive = new AtomicBoolean(false);
+        launchServer(args);
+>>>>>>> master
     }
 
 
     public static void main(String[] args) {
         if (args[0].equalsIgnoreCase("-h")) {
             // print how to use the program
+<<<<<<< HEAD
             System.out.println("If launching the primary server:");
             System.out.println("<heartbeat_port> <server_name> True <checkpoint_freq> <1 for active 2 for passive> <# of the same server kind> <RM port>");
             System.out.println("If launching the backup server:");
@@ -69,11 +97,28 @@ public class Server extends Thread {
         }
         serverPort = Integer.parseInt(args[0]);
         name = args[1];
+=======
+            System.out.println("<server_name> <server config > <checkpoint_freq> <# of the same server kind>");
+            System.out.println("server config - A : active ; P : passive (primary); B<id> : passive (backup 1 or 2) ");
+            return;
+        }
+        if (args.length != 4) {
+            System.out.println("Wrong Input!!!");
+            return;
+        }
+        // create a server object, changeStatus is false at beginning
+        new Server(args);
+    }
+
+    public void launchServer(String[] args) {
+        name = args[0];
+>>>>>>> master
         serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
         if (serverId > 3) {
             System.out.println("wrong server id as input");
             return;
         }
+<<<<<<< HEAD
         isMaster = "True".equals(args[2]);
         if (isMaster) checkpoint_freq = Integer.parseInt(args[3]);
         else backup_id = Integer.parseInt(args[3]);
@@ -88,6 +133,41 @@ public class Server extends Thread {
         if (configNum == 2) {
             curServer.acceptReplica(replicaPort);
         }
+=======
+        serverPort = server_ports[serverId - 1];
+
+        // check config and backup id
+        if (args[1].contains("A")) {
+            configNum = 1;
+            isMaster = true;
+        } else {
+            configNum = 2;
+            if (args[1].contains("P")) {
+                isMaster = true;
+            } else {
+                isMaster = false;
+                backup_id = Integer.parseInt(args[1].replaceAll("[\\D]", ""));
+                if (!(backup_id == 1 || backup_id == 2)) {
+                    System.out.println("wrong backup id");
+                    return;
+                }
+            }
+        }
+        // create gui
+        createGUI();
+
+        checkpoint_freq = Integer.parseInt(args[2]);
+
+        i_am_ready = Integer.parseInt(args[3]) == 1 ? true : false;
+
+        // setup a connectiong with replica manager
+        replicaPort = RM_ports[serverId - 1];
+
+        if (configNum == 2) {
+            this.acceptReplica(replicaPort);
+        }
+
+>>>>>>> master
         try (ServerSocket serverSocket = new ServerSocket(serverPort);) {
             System.out.println("Replica Manager port is " + replicaPort);
             System.out.println("Current server port is " + serverPort + ", name is " + name);
@@ -96,6 +176,7 @@ public class Server extends Thread {
             System.out.println("The server is :" + (i_am_ready ? "ready" : "not ready"));
 
             // primary server checkpoints the backups
+<<<<<<< HEAD
             if (isMaster) {
                 curServer.sendCheckpoints(1, checkpoint_freq);
                 curServer.sendCheckpoints(2, checkpoint_freq);
@@ -103,6 +184,17 @@ public class Server extends Thread {
             // backups receive checkpoints from primary server
             else {
                 curServer.receiveCheckpoints(backup_ports[backup_id - 1]);
+=======
+            if (configNum == 2) {
+                if (isMaster) {
+                    this.sendCheckpoints(1, checkpoint_freq);
+                    this.sendCheckpoints(2, checkpoint_freq);
+                }
+                // backups receive checkpoints from primary server
+                else {
+                    this.receiveCheckpoints(backup_ports[backup_id - 1]);
+                }
+>>>>>>> master
             }
 
             // if the server is ready, opens up two client sockets to other two servers
@@ -129,7 +221,10 @@ public class Server extends Thread {
         }
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     private void acceptReplica(int replicaPort) {
 
         new Thread(() -> {
@@ -143,6 +238,10 @@ public class Server extends Thread {
                         String[] tokens = line.split("\\s+");
                         if (tokens[0].equals("change")) {
                             //TO-DO if this server get "change" message means that it is becoming primary
+<<<<<<< HEAD
+=======
+                            isMaster = true;
+>>>>>>> master
                             break;
                         }
                     }
@@ -167,10 +266,17 @@ public class Server extends Thread {
                 }
 
 
+<<<<<<< HEAD
                 sendCheckpoints(2, 3);
                 sendCheckpoints(1, 3);
 
                 
+=======
+                sendCheckpoints(2, checkpoint_freq);
+                sendCheckpoints(1, checkpoint_freq);
+
+
+>>>>>>> master
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -308,7 +414,11 @@ public class Server extends Thread {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
                 // waits for primary to send checkpoint message
                 while (!changeStatusReceive.get()) {
+<<<<<<< HEAD
                         receiveServerSocket = serverSocket;
+=======
+                    receiveServerSocket = serverSocket;
+>>>>>>> master
                     // while (true) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("Ready to accept primary server checkpoint messages...");
@@ -330,11 +440,19 @@ public class Server extends Thread {
                     }
 
 
+<<<<<<< HEAD
             }
          } catch (Exception e) {
                 // e.printStackTrace();
                 return;
             }
+=======
+                }
+            } catch (Exception e) {
+                // e.printStackTrace();
+                return;
+            }
+>>>>>>> master
 
         });
         receiveCheckPointThread.start();
@@ -404,7 +522,7 @@ public class Server extends Thread {
             out.write(reply.getBytes());
         }
 
-        private void printState(String msg) {
+        private synchronized void printState(String msg) {
             String[] msgArr = msg.split(" ", 2);
             printTimestamp();
             synchronized (this) {
@@ -427,7 +545,7 @@ public class Server extends Thread {
             }
         }
 
-        private void receiveRequest(String client, Integer requestNum, String msg) {
+        private synchronized void receiveRequest(String client, Integer requestNum, String msg) {
             printTimestamp();
             if (i_am_ready) {
                 System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
@@ -436,7 +554,7 @@ public class Server extends Thread {
             }
         }
 
-        private void sendReply(String client, Integer requestNum, String msg) throws IOException {
+        private synchronized void sendReply(String client, Integer requestNum, String msg) throws IOException {
             printTimestamp();
             System.out.printf("Sending <%s, %s, request_num: %s, reply> %s %n", client, name, requestNum, msg);
             msg = requestNum + " " + msg;
@@ -450,5 +568,48 @@ public class Server extends Thread {
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
         System.out.printf("[ %s ] ", timeStamp);
     }
-}
 
+    // overwrite the write() methods of OutputStream to append the text to the text pane instead
+    private static void updateTextArea(final String text) {
+        SwingUtilities.invokeLater(() -> textArea.append(text));
+    }
+
+    /** This method refers to :
+     * http://unserializableone.blogspot.com/2009/01/redirecting-systemout-and-systemerr-to.html*/
+    private static void redirectSystemStreams() {
+        OutputStream out = new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                updateTextArea(String.valueOf((char) b));
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                updateTextArea(new String(b, off, len));
+            }
+
+            @Override
+            public void write(byte[] b) throws IOException {
+                write(b, 0, b.length);
+            }
+        };
+
+        System.setOut(new PrintStream(out, true));
+        System.setErr(new PrintStream(out, true));
+    }
+
+    private static void createGUI() {
+        //Create and set up the window.
+        JFrame frame = new JFrame("Server" + serverId);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        textArea = new TextArea();
+        redirectSystemStreams();
+        //Add contents to the window.
+        frame.add(textArea);
+
+        //Display the window.
+        frame.pack();
+        frame.setVisible(true);
+    }
+}

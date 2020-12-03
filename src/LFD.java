@@ -27,29 +27,36 @@ public class LFD implements Runnable {
     private static String LFD_ID;
     private static String SERVER_ID;
 
+    private static int server_ports[] = {1234, 1235, 1236};
+    private static int gfd_ports[] = {985, 211, 2020};
 
-    public LFD(String hostname, int port, int freq, String id) {
+
+    public LFD(String hostname, int freq, String id) {
         this.hostname = hostname;
-        this.port = port;
         this.freq = freq;
         this.LFD_ID = id;
+        this.port = server_ports[Integer.parseInt(id) - 1];
         int id_num = Integer.parseInt(id.replaceAll("[\\D]", ""));
         this.SERVER_ID = "S" + id_num;
     }
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length != 4) {
-            System.out.println("Wrong Input!!! Sample Input: java Server [port to server] [frequency to heartbeat server] [LFD id] [port to accept GFD heartbeat]");
+        if (args.length != 2 || args[0].equals("-h")) {
+            System.out.println("Sample Input: java Server [frequency to heartbeat server] [LFD id]");
             return;
         }
 
         // user-defined port number and heartbeat frequency
+<<<<<<< HEAD
         LFD fd = new LFD("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
+=======
+        LFD fd = new LFD("localhost", Integer.parseInt(args[0]), args[1]);
+>>>>>>> master
         // port of lfd that can be used by GFD, this server socket is used for accepting heatbead from GFD
         new Thread(() -> {
 
-            try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(args[3]))) {
+            try (ServerSocket serverSocket = new ServerSocket(gfd_ports[Integer.parseInt(LFD_ID) - 1])) {
                 // waits for client to connect
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
@@ -60,7 +67,7 @@ public class LFD implements Runnable {
 
                             String line;
                             while ((line = clientInput.readLine()) != null) {
-                                String msg = args[3] + "\n";
+                                String msg = gfd_ports[Integer.parseInt(LFD_ID) - 1] + "\n";
                                 clientOutput.write(msg.getBytes());
                             }
                         } catch (Exception e) {
