@@ -18,9 +18,11 @@ public class RM {
     private static String primaryServer;
     private static final String HOST_NAME = "localhost";
 
-    public static void main(String[] args) {
-        try(ServerSocket serverSocket = new ServerSocket(port);) {
+    private static boolean autoMode = false;
 
+    public static void main(String[] args) {
+        if (args[0].toLowerCase().equals("auto")) autoMode = true;
+        try(ServerSocket serverSocket = new ServerSocket(port);) {
             System.out.println("Launching RM ...");
             printMembers();
             while (true) {
@@ -30,8 +32,6 @@ public class RM {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private static void fillMap(String serverId, int rmPort, boolean isMaster) {
@@ -44,7 +44,6 @@ public class RM {
         if (!addressMap.containsKey(serverId)) {
             addressMap.put(serverId, rmPort);
         }
-
     }
 
     private static void printPrimary() {
@@ -69,8 +68,6 @@ public class RM {
                 sendChange(serverPort);
                 return;
             }
-
-
         }
     }
 
@@ -89,7 +86,6 @@ public class RM {
 
     private static void startConnecting(ServerSocket serverSocket) {
         try {
-
             Socket gfdSocket = serverSocket.accept();
             BufferedReader in = new BufferedReader(new InputStreamReader(gfdSocket.getInputStream()));
             String line;
@@ -110,9 +106,7 @@ public class RM {
                     int rmPort = Integer.parseInt(tokens[4]);
                     fillMap(serverId, rmPort, isMaster);
                     continue;
-
                 }
-
 
                 // get command "add' or "delete"
                 tokens = tokens[1].split(" ", 3);
@@ -137,14 +131,15 @@ public class RM {
                         printMembers();
                         addressMap.remove(server);
                         selectNewPrimary(server);
+                        // if in auto mode, recover dead replica
+                        if (autoMode) {
+                            Runtime.getRuntime().exec("javac Server.java");
+                            Runtime.getRuntime().exec("java Server " +  server + " A" + " 5 2");
+                            System.out.println("successfully execute");
+                        }
                     }
                 }
             }
-
-
-
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -157,11 +152,4 @@ public class RM {
         }
         System.out.println();
     }
-
-
-
-
-
-
-
 }
