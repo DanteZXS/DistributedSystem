@@ -48,11 +48,7 @@ public class LFD implements Runnable {
         }
 
         // user-defined port number and heartbeat frequency
-<<<<<<< HEAD
-        LFD fd = new LFD("localhost", Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
-=======
         LFD fd = new LFD("localhost", Integer.parseInt(args[0]), args[1]);
->>>>>>> master
         // port of lfd that can be used by GFD, this server socket is used for accepting heatbead from GFD
         new Thread(() -> {
 
