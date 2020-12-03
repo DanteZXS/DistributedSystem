@@ -1,3 +1,6 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -6,6 +9,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
 public class Server extends Thread {
     private static int serverPort;
@@ -39,10 +44,11 @@ public class Server extends Thread {
 
     private AtomicBoolean changeStatus;
 
-
     private AtomicBoolean changeStatusReceive;
 
     private ServerSocket receiveServerSocket;
+
+    private static TextArea textArea;
 
     /**
      * Each active server will open up two TCP connections as a client socket to the other
@@ -52,9 +58,10 @@ public class Server extends Thread {
      */
     private final static int[] recovery_ports = {601, 602, 603};
 
-    public Server() {
+    public Server(String[] args) {
         changeStatus = new AtomicBoolean(false);
         changeStatusReceive = new AtomicBoolean(false);
+        launchServer(args);
     }
 
 
@@ -69,7 +76,11 @@ public class Server extends Thread {
             System.out.println("Wrong Input!!!");
             return;
         }
+        // create a server object, changeStatus is false at beginning
+        new Server(args);
+    }
 
+    public void launchServer(String[] args) {
         name = args[0];
         serverId = Integer.parseInt(name.replaceAll("[\\D]", ""));
         if (serverId > 3) {
@@ -95,6 +106,9 @@ public class Server extends Thread {
                 }
             }
         }
+        // create gui
+        createGUI();
+
         checkpoint_freq = Integer.parseInt(args[2]);
 
         i_am_ready = Integer.parseInt(args[3]) == 1 ? true : false;
@@ -102,11 +116,10 @@ public class Server extends Thread {
         // setup a connectiong with replica manager
         replicaPort = RM_ports[serverId - 1];
 
-        // create a server object, changeStatus is false at beginning
-        Server curServer = new Server();
         if (configNum == 2) {
-            curServer.acceptReplica(replicaPort);
+            this.acceptReplica(replicaPort);
         }
+
         try (ServerSocket serverSocket = new ServerSocket(serverPort);) {
             System.out.println("Replica Manager port is " + replicaPort);
             System.out.println("Current server port is " + serverPort + ", name is " + name);
@@ -117,12 +130,12 @@ public class Server extends Thread {
             // primary server checkpoints the backups
             if (configNum == 2) {
                 if (isMaster) {
-                    curServer.sendCheckpoints(1, checkpoint_freq);
-                    curServer.sendCheckpoints(2, checkpoint_freq);
+                    this.sendCheckpoints(1, checkpoint_freq);
+                    this.sendCheckpoints(2, checkpoint_freq);
                 }
                 // backups receive checkpoints from primary server
                 else {
-                    curServer.receiveCheckpoints(backup_ports[backup_id - 1]);
+                    this.receiveCheckpoints(backup_ports[backup_id - 1]);
                 }
             }
 
@@ -149,7 +162,6 @@ public class Server extends Thread {
             e.printStackTrace();
         }
     }
-
 
     private void acceptReplica(int replicaPort) {
 
@@ -426,7 +438,7 @@ public class Server extends Thread {
             out.write(reply.getBytes());
         }
 
-        private void printState(String msg) {
+        private synchronized void printState(String msg) {
             String[] msgArr = msg.split(" ", 2);
             printTimestamp();
             synchronized (this) {
@@ -449,7 +461,7 @@ public class Server extends Thread {
             }
         }
 
-        private void receiveRequest(String client, Integer requestNum, String msg) {
+        private synchronized void receiveRequest(String client, Integer requestNum, String msg) {
             printTimestamp();
             if (i_am_ready) {
                 System.out.printf("Receiving <%s, %s, request_num: %s, request> %s %n", client, name, requestNum, msg);
@@ -458,7 +470,7 @@ public class Server extends Thread {
             }
         }
 
-        private void sendReply(String client, Integer requestNum, String msg) throws IOException {
+        private synchronized void sendReply(String client, Integer requestNum, String msg) throws IOException {
             printTimestamp();
             System.out.printf("Sending <%s, %s, request_num: %s, reply> %s %n", client, name, requestNum, msg);
             msg = requestNum + " " + msg;
@@ -471,5 +483,49 @@ public class Server extends Thread {
     private static void printTimestamp() {
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
         System.out.printf("[ %s ] ", timeStamp);
+    }
+
+    // overwrite the write() methods of OutputStream to append the text to the text pane instead
+    private static void updateTextArea(final String text) {
+        SwingUtilities.invokeLater(() -> textArea.append(text));
+    }
+
+    /** This method refers to :
+     * http://unserializableone.blogspot.com/2009/01/redirecting-systemout-and-systemerr-to.html*/
+    private static void redirectSystemStreams() {
+        OutputStream out = new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                updateTextArea(String.valueOf((char) b));
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                updateTextArea(new String(b, off, len));
+            }
+
+            @Override
+            public void write(byte[] b) throws IOException {
+                write(b, 0, b.length);
+            }
+        };
+
+        System.setOut(new PrintStream(out, true));
+        System.setErr(new PrintStream(out, true));
+    }
+
+    private static void createGUI() {
+        //Create and set up the window.
+        JFrame frame = new JFrame("Server" + serverId);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        textArea = new TextArea();
+        redirectSystemStreams();
+        //Add contents to the window.
+        frame.add(textArea);
+
+        //Display the window.
+        frame.pack();
+        frame.setVisible(true);
     }
 }

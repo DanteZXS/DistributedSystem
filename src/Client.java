@@ -1,10 +1,13 @@
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
 
 public class Client {
     private final String hostname;
@@ -27,18 +30,24 @@ public class Client {
 
     public static int requestNum;
 
-    // Indicate which config the server is using
-
     private static Client client;
-//    private boolean alive[] = {true, true, true};
+
+    private static boolean autoMode = false;
+    private static int messageFreq = 0;
+    private static final Random RAND = new Random();
 
     public Client(String hostname, String name) {
         this.hostname = hostname;
         this.name = name;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         client = new Client("localhost", args[0]);
+        if (args.length > 1 && args[1].toLowerCase().equals("auto")) {
+            System.out.println("Client is in auto mode");
+            autoMode = true;
+            messageFreq = Integer.parseInt(args[2]) * 1000;
+        }
         client.connect();
         client.chat();
     }
@@ -95,18 +104,22 @@ public class Client {
         return false;
     }
 
-    private void chat() throws IOException {
+    private void chat() throws IOException, InterruptedException {
         String line = "";
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-        while ((line = stdIn.readLine()) != null) {
+        while (autoMode || (line = stdIn.readLine()) != null) {
             client.connect();
             if (line.equals("quit")) {
                 break;
             }
+            if (autoMode) line = Integer.toString(RAND.nextInt(100));
             // send request to the server and then prints it in console
             sendRequest((Client.requestNum++) + " " + line, out1, out2, out3);
             // print the reply from server
             receiveReply(in1, in2, in3);
+            if (autoMode) {
+                Thread.sleep(messageFreq);
+            }
         }
     }
 
