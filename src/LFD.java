@@ -43,7 +43,7 @@ public class LFD implements Runnable {
     public static void main(String[] args) throws IOException {
 
         if (args.length != 2 || args[0].equals("-h")) {
-            System.out.println("Sample Input: java Server [frequency to heartbeat server] [LFD id]");
+            System.out.println("Sample Input: java LFD [frequency to heartbeat server] [LFD id]");
             return;
         }
 

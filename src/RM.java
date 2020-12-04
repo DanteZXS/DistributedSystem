@@ -17,11 +17,22 @@ public class RM {
     private static Map<String, Integer> addressMap = new HashMap<>();
     private static String primaryServer;
     private static final String HOST_NAME = "localhost";
-
+    private static String config;
     private static boolean autoMode = false;
 
     public static void main(String[] args) {
-        if (args[0].toLowerCase().equals("auto")) autoMode = true;
+        if (args.length != 2) {
+            System.out.println("Wrong Format!!");
+            System.out.println("Use(A active P passive): Java RM auto <A or P>");
+            System.out.println("Use(A active P passive): Java RM <A or P>");
+        }
+        if (args[0].toLowerCase().equals("auto")) { 
+            autoMode = true;
+            config = args[1];
+        } else {
+            config = args[0];
+        }
+        
         try(ServerSocket serverSocket = new ServerSocket(port);) {
             System.out.println("Launching RM ...");
             printMembers();
@@ -38,7 +49,9 @@ public class RM {
         if (isMaster) {
             if (!serverId.equals(primaryServer)) {
                 primaryServer = serverId;
-                printPrimary();
+                if (config.equals("P")) {
+                    printPrimary();
+                }
             }
         }
         if (!addressMap.containsKey(serverId)) {
@@ -53,7 +66,7 @@ public class RM {
 
 
     private static void selectNewPrimary(String server) {
-        if (primaryServer.equals(server)) {
+        if (primaryServer.equals(server) && config.equals("P")) {
             if (addressMap.size() == 0) {
                 return;
             }
@@ -131,11 +144,14 @@ public class RM {
                         addressMap.remove(server);
                         selectNewPrimary(server);
                         // if in auto mode, recover dead replica
+
                         if (autoMode) {
-                            Runtime.getRuntime().exec("javac Server.java");
-                            Runtime.getRuntime().exec("java Server " +  server + " A" + " 5 2");
+                            // Runtime.getRuntime().exec("javac Server.java");
+                            System.out.println("execute Server: " + server);
+                            Runtime.getRuntime().exec("java Server " +  server + " " + config + " 3 2");
                             System.out.println("successfully execute");
                         }
+
                     }
                 }
             }
