@@ -15,10 +15,12 @@ public class RM {
     private static int member_count = 0;
     private static Set<String> membership = new HashSet<>();
     private static Map<String, Integer> addressMap = new HashMap<>();
+    private static Map<String, Integer> backupIdMap = new HashMap<>();
     private static String primaryServer;
     private static final String HOST_NAME = "localhost";
     private static String config;
     private static boolean autoMode = false;
+    private static int curEmptyBackupId;
 
     public static void main(String[] args) {
         if (args.length != 2) {
@@ -45,7 +47,7 @@ public class RM {
         }
     }
 
-    private static void fillMap(String serverId, int rmPort, boolean isMaster) {
+    private static void fillMap(String serverId, int rmPort, boolean isMaster, int backup_id) {
         if (isMaster) {
             if (!serverId.equals(primaryServer)) {
                 primaryServer = serverId;
@@ -57,6 +59,13 @@ public class RM {
         if (!addressMap.containsKey(serverId)) {
             addressMap.put(serverId, rmPort);
         }
+
+        if (backup_id != 0) {
+            backupIdMap.put(serverId, backup_id);
+        } else {
+            backupIdMap.remove(serverId);
+        }
+
     }
 
     private static void printPrimary() {
@@ -79,8 +88,11 @@ public class RM {
                 printPrimary();
                 System.out.println("server port need to send change: "+ serverPort);
                 sendChange(serverPort);
+                curEmptyBackupId = backupIdMap.get(primaryServer);
+                backupIdMap.remove(primaryServer);
                 return;
             }
+
         }
     }
 
@@ -116,7 +128,8 @@ public class RM {
                     String serverId = tokens[2];
                     boolean isMaster = tokens[3].equals("true") ? true: false;
                     int rmPort = Integer.parseInt(tokens[4]);
-                    fillMap(serverId, rmPort, isMaster);
+                    int backup_id = Integer.parseInt(tokens[5]);
+                    fillMap(serverId, rmPort, isMaster, backup_id);
                     continue;
                 }
 
@@ -148,7 +161,18 @@ public class RM {
                         if (autoMode) {
                             // Runtime.getRuntime().exec("javac Server.java");
                             System.out.println("execute Server: " + server);
-                            Runtime.getRuntime().exec("java Server " +  server + " " + config + " 3 2");
+                            if (config.equals("A")) {
+                                Runtime.getRuntime().exec("java Server " +  server + " " + config + " 3 2");
+                            } else {
+                                if (!backupIdMap.containsKey(server)) {
+                                    // System.out.println(String.format("bring back %s as B%d%n", server, curEmptyBackupId));
+                                    Runtime.getRuntime().exec("java Server " +  server + " " + "B" + curEmptyBackupId + " 3 1");
+                                } else {
+                                    int id = backupIdMap.get(server);
+                                    // System.out.println(String.format("bring back %s as B%d%n", server, id));
+                                    Runtime.getRuntime().exec("java Server " +  server + " " + "B" + id + " 3 1");
+                                }
+                            }
                             System.out.println("successfully execute");
                         }
 

@@ -20,7 +20,6 @@ public class Server extends Thread {
     private static int state;
     private static boolean isMaster;
     private static int configNum;
-
     private static int replicaPort;
 
     /**
@@ -184,7 +183,7 @@ public class Server extends Thread {
                     }
                     break;
                 }
-
+                backup_id = 0;
                 changeStatus.set(true);
                 changeStatusReceive.set(true);
                 if (sendCheckPointThread != null) {
@@ -365,7 +364,7 @@ public class Server extends Thread {
 
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // e.printStackTrace();
                 return;
             }
 
@@ -433,7 +432,7 @@ public class Server extends Thread {
             printTimestamp();
             System.out.printf("Acknowledge heartbeat from %s %n", LFD);
             // String reply = "heartbeat\n";
-            String reply = String.format("RM:add replica S%d %s %d%n", serverId, isMaster, replicaPort);
+            String reply = String.format("RM:add replica S%d %s %d %d%n", serverId, isMaster, replicaPort, backup_id);
             out.write(reply.getBytes());
         }
 
